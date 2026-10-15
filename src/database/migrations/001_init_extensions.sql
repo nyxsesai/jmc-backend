@@ -1,0 +1,4 @@
+-- Extensions required by the JMC MVP schema
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS citext;

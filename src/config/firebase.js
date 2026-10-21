@@ -15,9 +15,7 @@ export function initFirebase() {
     env.FIREBASE_PRIVATE_KEY;
 
   if (!hasCreds) {
-    console.warn(
-      "⚠️  Firebase credentials not set — Firebase features disabled",
-    );
+    console.warn("Firebase credentials not set — Firebase features disabled");
     return null;
   }
 

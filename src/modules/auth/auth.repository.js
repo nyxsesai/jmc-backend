@@ -1,5 +1,3 @@
-// DB queries for auth module
-
 export const findUserByFirebaseUid = async (fastify, firebaseUid) => {
   const { rows } = await fastify.db.query(
     "SELECT * FROM users WHERE firebase_uid = $1 AND deleted_at IS NULL",

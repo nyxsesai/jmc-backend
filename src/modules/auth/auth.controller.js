@@ -1,11 +1,6 @@
 import * as service from "./auth.service.js";
 import { success } from "../../utils/response.js";
 
-// export const sendOtpHandler = async (request, reply) => {
-//   const result = await service.sendOtp(request.server, request.body);
-//   return reply.send(success(result, "OTP sent"));
-// };
-
 export const verifyOtpHandler = async (request, reply) => {
   const result = await service.verifyOtp(request.server, request.body);
   return reply.send(success(result, "Login successful"));

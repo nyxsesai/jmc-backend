@@ -1,4 +1,3 @@
-// Firebase-based verify (used when Firebase is enabled)
 export const verifyOtpFirebaseSchema = {
   body: {
     type: "object",
@@ -8,27 +7,6 @@ export const verifyOtpFirebaseSchema = {
     },
   },
 };
-
-// export const sendOtpSchema = {
-//   body: {
-//     type: "object",
-//     required: ["phone"],
-//     properties: {
-//       phone: { type: "string", minLength: 10, maxLength: 20 },
-//     },
-//   },
-// };
-
-// export const verifyOtpSchema = {
-//   body: {
-//     type: "object",
-//     required: ["phone", "otp"],
-//     properties: {
-//       phone: { type: "string", minLength: 10, maxLength: 20 },
-//       otp: { type: "string", minLength: 4, maxLength: 8 },
-//     },
-//   },
-// };
 
 export const registerSchema = {
   body: {

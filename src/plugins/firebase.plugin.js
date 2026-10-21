@@ -13,4 +13,4 @@ async function firebasePlugin(fastify) {
   }
 }
 
-export default fp(firebasePlugin, { name: "firebase" });
+export default firebasePlugin;

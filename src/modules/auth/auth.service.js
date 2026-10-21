@@ -46,7 +46,7 @@ const sanitize = (user) => {
 };
 
 export const verifyOtp = async (fastify, { idToken }) => {
-  if (fastify.firebase?.auth) {
+  if (!fastify.firebase?.auth) {
     throw ApiError.internal("Firebase not configured on server");
   }
   let decoded;

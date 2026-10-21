@@ -38,8 +38,8 @@ export async function buildApp() {
   });
   await fastify.register(errorHandlerPlugin);
   await fastify.register(dbPlugin);
-  await fastify.register(authPlugin);
   await fastify.register(firebasePlugin);
+  await fastify.register(authPlugin);
   await fastify.register(registerRoutes);
 
   return fastify;

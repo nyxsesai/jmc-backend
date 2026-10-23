@@ -1,6 +1,8 @@
 import healthRoutes from "./health.routes.js";
 import authRoutes from "../modules/auth/auth.routes.js";
 
+import contactsRoutes from "../modules/contacts/contacts.routes.js";
+
 export default async function registerRoutes(fastify) {
   // Root — friendly response instead of 404
   fastify.get("/", async () => ({
@@ -16,4 +18,6 @@ export default async function registerRoutes(fastify) {
 
   fastify.register(healthRoutes, { prefix: "/api/v1" });
   fastify.register(authRoutes, { prefix: "/api/v1/auth" });
+
+  fastify.register(contactsRoutes, { prefix: "/api/v1/contacts" });
 }

@@ -3,10 +3,7 @@ import { hmacPhone } from "../../security/hmac.js";
 import { ApiError } from "../../utils/apiError.js";
 import { signToken } from "../../utils/jwt.js";
 import * as repo from "./auth.repository.js";
-
-const normalizePhone = (phone) => {
-  return phone.trim();
-};
+import * as contactsRepo from "../contacts/contacts.repository.js";
 
 export const register = async (fastify, userId, { full_name, email }) => {
   const user = await repo.findUserById(fastify, userId);
@@ -74,6 +71,13 @@ export const verifyOtp = async (fastify, { idToken }) => {
       phoneHmac,
     });
     await repo.createDefaultSettings(fastify, user.id);
+    // Link people who already had this number in their synced contacts
+    try {
+      await contactsRepo.linkExistingContacts(fastify, user.id);
+    } catch (err) {
+      fastify.log.error({ err }, "linkExistingContacts failed"); // never block signup
+    }
+
     fastify.log.info(`New user (Firebase): ${user.id}`);
   } else {
     fastify.log.info(`Existing user login (Firebase): ${user.id}`);

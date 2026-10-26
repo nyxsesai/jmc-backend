@@ -1,0 +1,1 @@
+   CREATE INDEX IF NOT EXISTS idx_uc_lookup_hmac ON user_contacts (phone_lookup_hmac);

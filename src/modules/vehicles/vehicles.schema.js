@@ -9,7 +9,12 @@ const fields = {
   make: { type: "string", minLength: 1, maxLength: 40 },
   model: { type: "string", minLength: 1, maxLength: 40 },
   color: { type: "string", maxLength: 30 },
-  plate: { type: "string", minLength: 4, maxLength: 15 },
+  plate: {
+    type: "string",
+    minLength: 4,
+    maxLength: 15,
+    pattern: "^(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9\\s\\-]+$",
+  },
   total_seats: { type: "integer", minimum: 1, maximum: 8 },
 };
 

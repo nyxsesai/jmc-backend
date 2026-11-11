@@ -64,3 +64,12 @@ export const searchHandler = async (request, reply) => {
   );
   return reply.send(success(result));
 };
+
+export const detailsHandler = async (request, reply) => {
+  const result = await service.getRideDetails(
+    request.server,
+    request.user.userId,
+    request.params.id,
+  );
+  return reply.send(success(result));
+};

@@ -39,6 +39,8 @@ export const createRideSchema = {
       destination_place_id: { type: "string", format: "uuid" },
       preferences: { type: "object" },
       notes: { type: "string", maxLength: 500 },
+      distance_km: { type: "number", minimum: 0 },
+      duration_mins: { type: "integer", minimum: 0 },
     },
   },
 };

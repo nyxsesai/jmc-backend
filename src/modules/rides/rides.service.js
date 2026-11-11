@@ -17,6 +17,7 @@ const parseFuture = (value) => {
 };
 
 const withNotes = (ride) => {
+  // 1. Decrypt Notes
   const { notes_ciphertext, ...rest } = ride;
   let notes = null;
   if (notes_ciphertext) {
@@ -26,7 +27,20 @@ const withNotes = (ride) => {
       notes = null;
     }
   }
-  return { ...rest, notes };
+
+  let vehicle_plate = null;
+  if (ride.vehicle_plate_encrypted) {
+    try {
+      vehicle_plate = decrypt(ride.vehicle_plate_encrypted);
+    } catch {
+      vehicle_plate = null;
+    }
+  }
+
+  // Remove the raw encrypted buffer from the response
+  const { vehicle_plate_encrypted, ...finalRest } = rest;
+
+  return { ...finalRest, notes, vehicle_plate };
 };
 
 export const createRide = async (fastify, userId, body) => {
@@ -98,6 +112,8 @@ export const createRide = async (fastify, userId, body) => {
     totalSeats,
     preferences: body.preferences ?? {},
     notesCiphertext: body.notes ? encrypt(body.notes) : null,
+    distanceKm: body.distance_km ?? null,
+    durationMins: body.duration_mins ?? null,
   });
   return ride;
 };
@@ -198,5 +214,16 @@ export const searchRides = async (fastify, userId, query) => {
     dropoff,
     radius,
   );
-  return { rides };
+  return { rides: rides.map(withNotes) };
+};
+
+export const getRideDetails = async (fastify, userId, rideId) => {
+  // Driver opening their own ride
+  const own = await repo.findOwnRide(fastify, rideId, userId);
+  if (own) return withNotes(own);
+
+  // Passenger: only rides they are allowed to see
+  const ride = await repo.findRideForPassenger(fastify, userId, rideId);
+  if (!ride) throw ApiError.notFound("Ride not found");
+  return withNotes(ride);
 };

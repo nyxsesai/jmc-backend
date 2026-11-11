@@ -50,4 +50,10 @@ export default async function ridesRoutes(fastify) {
     schema: schema.cancelRideSchema,
     handler: controller.completeHandler,
   });
+
+  fastify.get("/:id", {
+    preHandler: [fastify.authenticate],
+    schema: schema.cancelRideSchema,
+    handler: controller.detailsHandler,
+  });
 }

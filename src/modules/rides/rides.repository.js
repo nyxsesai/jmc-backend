@@ -203,6 +203,7 @@ const VISIBLE_TO_PASSENGER = `
 
 const PASSENGER_RIDE_FIELDS = `
   r.id, r.status, r.departure_at, r.total_seats, r.seats_available,
+  r.distance_km, r.duration_mins,
   r.preferences, r.notes_ciphertext, r.created_at,
   ST_Y(r.origin_geog::geometry)      AS origin_lat,
   ST_X(r.origin_geog::geometry)      AS origin_lng,

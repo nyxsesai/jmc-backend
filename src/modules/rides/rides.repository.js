@@ -6,6 +6,8 @@ const RIDE_FIELDS = `
   ST_X(r.origin_geog::geometry)      AS origin_lng,
   ST_Y(r.destination_geog::geometry) AS destination_lat,
   ST_X(r.destination_geog::geometry) AS destination_lng,
+  op.label AS origin_name,               
+  dp.label AS destination_name,  
   r.preferences, r.notes_ciphertext, r.created_at, r.updated_at`;
 
 export const findDriverVehicle = async (fastify, userId, vehicleId) => {
@@ -113,6 +115,8 @@ export const listMine = async (fastify, driverId, scope) => {
   const { rows } = await fastify.db.query(
     `SELECT ${RIDE_FIELDS}
        FROM rides r
+       LEFT JOIN places op ON op.id = r.origin_place_id       
+       LEFT JOIN places dp ON dp.id = r.destination_place_id 
       WHERE r.driver_id = $1 AND ${filter}
       ORDER BY r.departure_at ${order}
       LIMIT 50`,
@@ -123,7 +127,10 @@ export const listMine = async (fastify, driverId, scope) => {
 
 export const findOwnRide = async (fastify, rideId, driverId) => {
   const { rows } = await fastify.db.query(
-    `SELECT ${RIDE_FIELDS} FROM rides r WHERE r.id = $1 AND r.driver_id = $2`,
+    `SELECT ${RIDE_FIELDS} FROM rides r 
+      LEFT JOIN places op ON op.id = r.origin_place_id       
+      LEFT JOIN places dp ON dp.id = r.destination_place_id
+    WHERE r.id = $1 AND r.driver_id = $2`,
     [rideId, driverId],
   );
   return rows[0] || null;
@@ -214,7 +221,9 @@ const PASSENGER_RIDE_FIELDS = `
   v.make AS vehicle_make,
   v.model AS vehicle_model,
   v.color AS vehicle_color,
-  v.plate_encrypted AS vehicle_plate_encrypted`;
+  v.plate_encrypted AS vehicle_plate_encrypted,
+  op.label AS origin_name,              
+  dp.label AS destination_name`;
 
 export const findAvailableRides = async (
   fastify,
@@ -233,6 +242,8 @@ export const findAvailableRides = async (
        FROM rides r
        JOIN users u ON u.id = r.driver_id
        LEFT JOIN vehicles v ON v.id = r.vehicle_id
+       LEFT JOIN places op ON op.id = r.origin_place_id       
+       LEFT JOIN places dp ON dp.id = r.destination_place_id
        CROSS JOIN s
       WHERE ${VISIBLE_TO_PASSENGER}
         AND r.seats_available > 0
@@ -262,6 +273,8 @@ export const findRideForPassenger = async (fastify, passengerId, rideId) => {
        FROM rides r
        JOIN users u ON u.id = r.driver_id
        LEFT JOIN vehicles v ON v.id = r.vehicle_id
+       LEFT JOIN places op ON op.id = r.origin_place_id     
+       LEFT JOIN places dp ON dp.id = r.destination_place_id
       WHERE r.id = $2::uuid AND ${VISIBLE_TO_PASSENGER}`,
     [passengerId, rideId],
   );

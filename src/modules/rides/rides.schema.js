@@ -87,7 +87,7 @@ export const searchRidesSchema = {
         type: "integer",
         minimum: 100,
         maximum: 10000,
-        default: 1000,
+        default: 5000,
       },
     },
   },

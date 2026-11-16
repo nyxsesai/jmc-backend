@@ -184,6 +184,19 @@ export const startRide = async (fastify, userId, rideId) => {
   const existing = await repo.findOwnRide(fastify, rideId, userId);
   if (!existing) throw ApiError.notFound("Ride not found");
 
+  const now = new Date();
+  const departureTime = new Date(existing.departure_at);
+
+  // Calculate the difference in minutes
+  const diffInMinutes = (departureTime.getTime() - now.getTime()) / (1000 * 60);
+
+  // Rule: Cannot start more than 15 minutes before the scheduled departure
+  if (diffInMinutes > 15) {
+    throw ApiError.badRequest(
+      `You cannot start this ride yet. It is scheduled for ${departureTime.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" })}.`,
+    );
+  }
+
   const started = await repo.startRide(fastify, rideId, userId);
   if (!started) {
     throw ApiError.badRequest("Only a published ride can be started");
@@ -205,7 +218,7 @@ export const completeRide = async (fastify, userId, rideId) => {
 export const searchRides = async (fastify, userId, query) => {
   const pickup = { lat: query.pickup_lat, lng: query.pickup_lng };
   const dropoff = { lat: query.dropoff_lat, lng: query.dropoff_lng };
-  const radius = query.radius_meters || 1000;
+  const radius = query.radius_meters || 5000;
 
   const rides = await repo.findAvailableRides(
     fastify,

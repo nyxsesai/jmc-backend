@@ -1,9 +1,11 @@
 import { buildApp } from "./app.js";
 import { env } from "./config/env.js";
+import { startRideExpiryCron } from "./jobs/schedulers/ride-expiry.cron.js";
 
 async function start() {
   try {
     const app = await buildApp();
+    startRideExpiryCron(app);
     await app.listen({ port: env.PORT, host: env.HOST });
     app.log.info(`JMC Backend running at http://${env.HOST}:${env.PORT}`);
   } catch (err) {

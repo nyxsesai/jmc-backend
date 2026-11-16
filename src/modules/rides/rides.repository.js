@@ -107,7 +107,7 @@ export const insertRide = async (fastify, r) => {
 export const listMine = async (fastify, driverId, scope) => {
   const filter =
     scope === "past"
-      ? "(r.status IN ('completed', 'cancelled'))"
+      ? "(r.status IN ('completed', 'cancelled', 'expired'))"
       : "(r.status IN ('draft', 'published', 'driving') AND r.departure_at >= now() - interval '2 hours')";
 
   const order = scope === "past" ? "DESC" : "ASC";

@@ -1,5 +1,5 @@
 const RIDE_FIELDS = `
-  r.id, r.status, r.departure_at, r.total_seats, r.seats_available,
+  r.id, r.driver_id, r.status, r.departure_at, r.total_seats, r.seats_available,
   r.vehicle_id, r.origin_place_id, r.destination_place_id,
   r.distance_km, r.duration_mins,
   ST_Y(r.origin_geog::geometry)      AS origin_lat,
@@ -8,7 +8,7 @@ const RIDE_FIELDS = `
   ST_X(r.destination_geog::geometry) AS destination_lng,
   op.label AS origin_name,               
   dp.label AS destination_name,  
-  r.preferences, r.notes_ciphertext, r.created_at, r.updated_at`;
+  r.preferences, r.notes_ciphertext, r.stops, r.created_at, r.updated_at`;
 
 export const findDriverVehicle = async (fastify, userId, vehicleId) => {
   const { rows } = await fastify.db.query(
@@ -70,7 +70,7 @@ export const insertRide = async (fastify, r) => {
        driver_id, vehicle_id, origin_place_id, destination_place_id,
        origin_geog, destination_geog, route_geog, corridor_geog,
        departure_at, total_seats, seats_available, preferences, notes_ciphertext,
-       distance_km, duration_mins
+       distance_km, duration_mins,stops
      )
      SELECT
        $1::uuid, $2::uuid, $3::uuid, $4::uuid,
@@ -79,9 +79,9 @@ export const insertRide = async (fastify, r) => {
        route.g,
        ST_Buffer(route.g, $10::float8)::geography,
        $11::timestamptz, $12::int, $12::int, $13::jsonb, $14::bytea,
-       $15::decimal, $16::int
+       $15::decimal, $16::int, $17::jsonb
      FROM route
-     RETURNING id, status, departure_at, total_seats, seats_available, vehicle_id, distance_km, duration_mins, created_at`,
+     RETURNING id, status, departure_at, total_seats, seats_available, vehicle_id, distance_km, duration_mins, stops, created_at`,
     [
       r.driverId,
       r.vehicleId,
@@ -99,6 +99,7 @@ export const insertRide = async (fastify, r) => {
       r.notesCiphertext,
       r.distanceKm,
       r.durationMins,
+      JSON.stringify(r.stops ?? []),
     ],
   );
   return rows[0];
@@ -127,9 +128,14 @@ export const listMine = async (fastify, driverId, scope) => {
 
 export const findOwnRide = async (fastify, rideId, driverId) => {
   const { rows } = await fastify.db.query(
-    `SELECT ${RIDE_FIELDS} FROM rides r 
-      LEFT JOIN places op ON op.id = r.origin_place_id       
-      LEFT JOIN places dp ON dp.id = r.destination_place_id
+    `SELECT 
+       ${RIDE_FIELDS}, 
+       u.full_name AS driver_name,
+       ST_AsGeoJSON(r.route_geog::geometry)::json AS route
+     FROM rides r 
+     LEFT JOIN places op ON op.id = r.origin_place_id       
+     LEFT JOIN places dp ON dp.id = r.destination_place_id
+     LEFT JOIN users u ON u.id = r.driver_id
     WHERE r.id = $1 AND r.driver_id = $2`,
     [rideId, driverId],
   );
@@ -145,11 +151,15 @@ export const updateRide = async (fastify, rideId, driverId, f) => {
             seats_available  = COALESCE($4::int, seats_available),
             preferences      = COALESCE($5::jsonb, preferences),
             notes_ciphertext = COALESCE($6::bytea, notes_ciphertext),
-            updated_at       = now()
+            updated_at       = now(),
+            route_geog       = COALESCE(ST_SetSRID(ST_GeomFromGeoJSON($7::text), 4326)::geography, route_geog),
+            distance_km      = COALESCE($8::decimal, distance_km),
+            duration_mins    = COALESCE($9::int, duration_mins),
+            stops            = COALESCE($10::jsonb, stops)
       WHERE id = $1 AND driver_id = $2
         AND status = 'published'
         AND seats_available = total_seats
-      RETURNING id, status, departure_at, total_seats, seats_available`,
+      RETURNING id, status, departure_at, total_seats, seats_available, distance_km, duration_mins,stops`,
     [
       rideId,
       driverId,
@@ -157,6 +167,14 @@ export const updateRide = async (fastify, rideId, driverId, f) => {
       f.totalSeats,
       f.preferences ? JSON.stringify(f.preferences) : null,
       f.notesCiphertext,
+      f.route
+        ? JSON.stringify({ type: "LineString", coordinates: f.route })
+        : null,
+      f.distanceKm ?? null,
+      f.durationMins ?? null,
+      f.stops !== null && f.stops !== undefined
+        ? JSON.stringify(f.stops)
+        : null,
     ],
   );
   return rows[0] || null;
@@ -211,7 +229,7 @@ const VISIBLE_TO_PASSENGER = `
 const PASSENGER_RIDE_FIELDS = `
   r.id, r.status, r.departure_at, r.total_seats, r.seats_available,
   r.distance_km, r.duration_mins,
-  r.preferences, r.notes_ciphertext, r.created_at,
+  r.preferences, r.notes_ciphertext, r.stops, r.created_at,
   ST_Y(r.origin_geog::geometry)      AS origin_lat,
   ST_X(r.origin_geog::geometry)      AS origin_lng,
   ST_Y(r.destination_geog::geometry) AS destination_lat,

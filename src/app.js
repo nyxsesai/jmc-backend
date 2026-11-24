@@ -7,6 +7,9 @@ import firebasePlugin from "./plugins/firebase.plugin.js";
 import registerRoutes from "./routes/index.js";
 import rateLimit from "@fastify/rate-limit";
 
+import websocketPlugin from "./plugins/websocket.plugin.js";
+import socketServer from "./realtime/socket.server.js";
+
 export async function buildApp() {
   const fastify = Fastify({
     logger: {
@@ -41,6 +44,9 @@ export async function buildApp() {
   await fastify.register(firebasePlugin);
   await fastify.register(authPlugin);
   await fastify.register(registerRoutes);
+
+  await fastify.register(websocketPlugin);
+  await fastify.register(socketServer);
 
   return fastify;
 }

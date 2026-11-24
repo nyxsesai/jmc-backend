@@ -31,4 +31,9 @@ export const env = {
 
   PHONE_ENCRYPTION_KEY: process.env.PHONE_ENCRYPTION_KEY,
   PHONE_HMAC_SECRET: process.env.PHONE_HMAC_SECRET,
+
+  START_RIDE_EARLY_MINS: parseInt(
+    process.env.START_RIDE_EARLY_MINS || "15",
+    10,
+  ),
 };

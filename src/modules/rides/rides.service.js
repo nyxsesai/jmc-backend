@@ -2,6 +2,10 @@ import { encrypt, decrypt } from "../../security/encryption.js";
 import { ApiError } from "../../utils/apiError.js";
 import * as authRepo from "../auth/auth.repository.js";
 import * as repo from "./rides.repository.js";
+import { env } from "../../config/env.js";
+import { broadcastToRide } from "../../realtime/socket.rooms.js";
+import { EVENTS } from "../../realtime/events.js";
+import { forgetRide } from "../location/location.service.js";
 
 const CORRIDOR_METERS = 500; // how far from the route a passenger can be picked up
 const OVERLAP_MINUTES = 60; // a driver can't publish two rides within this window
@@ -114,6 +118,7 @@ export const createRide = async (fastify, userId, body) => {
     notesCiphertext: body.notes ? encrypt(body.notes) : null,
     distanceKm: body.distance_km ?? null,
     durationMins: body.duration_mins ?? null,
+    stops: body.stops ?? [],
   });
   return ride;
 };
@@ -158,6 +163,10 @@ export const updateRide = async (fastify, userId, rideId, body) => {
     totalSeats: body.total_seats ?? null,
     preferences: body.preferences ?? null,
     notesCiphertext: body.notes ? encrypt(body.notes) : null,
+    route: body.route ?? null,
+    distanceKm: body.distance_km ?? null,
+    durationMins: body.duration_mins ?? null,
+    stops: body.stops !== undefined ? body.stops : null,
   });
   if (!updated) {
     throw ApiError.badRequest(
@@ -177,6 +186,8 @@ export const cancelRide = async (fastify, userId, rideId) => {
       "Only a draft or published ride can be cancelled",
     );
   }
+  broadcastToRide(rideId, { type: EVENTS.RIDE_ENDED, status: "cancelled" });
+  forgetRide(rideId);
   return cancelled;
 };
 
@@ -191,7 +202,7 @@ export const startRide = async (fastify, userId, rideId) => {
   const diffInMinutes = (departureTime.getTime() - now.getTime()) / (1000 * 60);
 
   // Rule: Cannot start more than 15 minutes before the scheduled departure
-  if (diffInMinutes > 15) {
+  if (diffInMinutes > env.START_RIDE_EARLY_MINS) {
     throw ApiError.badRequest(
       `You cannot start this ride yet. It is scheduled for ${departureTime.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" })}.`,
     );
@@ -212,6 +223,8 @@ export const completeRide = async (fastify, userId, rideId) => {
   if (!completed) {
     throw ApiError.badRequest("Only a driving ride can be completed");
   }
+  broadcastToRide(rideId, { type: EVENTS.RIDE_ENDED, status: "completed" });
+  forgetRide(rideId);
   return completed;
 };
 

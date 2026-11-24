@@ -7,6 +7,17 @@ const point = {
   },
 };
 
+const stop = {
+  type: "object",
+  required: ["name", "lat", "lng"],
+  properties: {
+    name: { type: "string", minLength: 1, maxLength: 100 },
+    lat: { type: "number", minimum: -90, maximum: 90 },
+    lng: { type: "number", minimum: -180, maximum: 180 },
+  },
+  additionalProperties: false,
+};
+
 const idParam = {
   type: "object",
   required: ["id"],
@@ -41,6 +52,11 @@ export const createRideSchema = {
       notes: { type: "string", maxLength: 500 },
       distance_km: { type: "number", minimum: 0 },
       duration_mins: { type: "integer", minimum: 0 },
+      stops: {
+        type: "array",
+        maxItems: 10,
+        items: stop,
+      },
     },
   },
 };
@@ -55,6 +71,25 @@ export const updateRideSchema = {
       total_seats: { type: "integer", minimum: 1, maximum: 8 },
       preferences: { type: "object" },
       notes: { type: "string", maxLength: 500 },
+      route: {
+        type: "array",
+        minItems: 2,
+        maxItems: 5000,
+        items: {
+          type: "array",
+          minItems: 2,
+          maxItems: 2,
+          items: { type: "number" },
+        },
+      },
+      distance_km: { type: "number", minimum: 0 },
+      duration_mins: { type: "integer", minimum: 0 },
+
+      stops: {
+        type: "array",
+        maxItems: 10,
+        items: stop,
+      },
     },
   },
 };
